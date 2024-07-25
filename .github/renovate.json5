@@ -7,30 +7,57 @@
     "helpers:pinGitHubActionDigestsToSemver",
     "regexManagers:githubActionsVersions",
   ],
+  "dependencyDashboardTitle": "Renovate Dashboard",
   "customDatasources": {
       "firefox": {
         "defaultRegistryUrlTemplate": "https://product-details.mozilla.org/1.0/firefox_versions.json",
         "transformTemplates": [
-          "{\"releases\": [ {\"version\": $.LATEST_FIREFOX_VERSION } ] }"
+          "{\"releases\": [{ \"version\": $.{{packageName}} }] }"
         ],
+      },
+      "putty": {
+        "defaultRegistryUrlTemplate": "https://www.chiark.greenend.org.uk/~sgtatham/putty/latest.html",
+        "format": "html",
       },
   },
   "customManagers": [
     {
       "customType": "regex",
-      "fileMatch": ["^firefox.sls$"],
+      "fileMatch": ["\\.sls$"],
       "matchStrings": [
-        "load_yaml as versions -%}\\n- (?<currentValue>\\S+)\\n",
+        "# renovate: datasource=(?<datasource>[a-z-.]+?) depName=(?<depName>\\S+?)(?: packageName=(?<packageName>\\S+?))?\\s+- [\"']?(?<currentValue>.+?)[\"']?\\s",
       ],
-      "autoReplaceStringTemplate": "load_yaml as versions -%}\n- {{{newValue}}}\n- {{{currentValue}}}\n",
-      "datasourceTemplate": "custom.firefox",
-      "depNameTemplate": "firefox",
+      "autoReplaceStringTemplate": "# renovate: datasource={{{datasource}}} depName={{{depName}}}{{#unless (equals depName packageName)}} packageName={{{packageName}}}{{/unless}}\n- '{{{newValue}}}'\n- '{{{currentValue}}}'\n",
     },
   ],
   "packageRules": [
     {
+      "matchDatasources": ["custom.putty"],
+      "extractVersion": "putty-64bit-(?<version>.+)-installer\\.msi$",
+    },
+    {
+      "matchDepNames": ["firefox-esr"],
+      "extractVersion": "(?<version>.+)esr$",
+    },
+    {
       "matchPackageNames": ["python/cpython"],
       "separateMinorPatch": true,
+    },
+    {
+      // Salt major version releases must be added manually to the sls file
+      "matchDepPrefixes": ["salt-"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false,
+    },
+    {
+      "matchFileNames": ["**/*.sls"],
+      "commitMessageAction": "add",
+      "commitMessageExtra": "{{prettyNewVersion}}",
+      "commitMessageTopic": "`{{depName}}` version",
+      "extends": [
+        ":semanticCommitScopeDisabled",
+        ":semanticCommitType(update)",
+      ],
     },
   ],
 }
