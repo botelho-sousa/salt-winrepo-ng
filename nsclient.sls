@@ -1,5 +1,8 @@
-{%- load_yaml as versions %}
+{% load_yaml as versions -%}
 # renovate: datasource=github-releases depName=nscp packageName=mickem/nscp
+- '0.6.6'
+- '0.6.5'
+- '0.6.4'
 - '0.5.3.4'
 - '0.5.2.39'
 - '0.5.2.29'
@@ -10,34 +13,32 @@
 - '0.4.4.19'
 - '0.4.3.143'
 - '0.4.3.88'
-{%- endload%}
-# This is to handle the architecture
-{%- if grains['cpuarch'] == 'AMD64' %}
-  {%- set arch_file = "x64" %}
-  {%- set arch_name = "x64" %}
-{%- else %}
+{% endload -%}
+
+{%- if grains["cpuarch"] == "x86" %}
   {%- set arch_file = "Win32" %}
   {%- set arch_name = "x86" %}
 {%- endif %}
 
 nsclient:
 {%- for version in versions %}
-  # This is to handle the version reported in Windows
-  {%- set major, minor, maint, build = version.split(".") %}
-  {%- if minor|int >= 5 %} # version 5 and newer has 2 dots (0.5.2039)
-    {%- set install_version = ".".join([major, minor, maint]) %}
-    {%- set install_version = "0".join([install_version, build]) %}
-  {%- else %} # version 4 and lower has 3 dots (0.4.4.23)
-    {%- set install_version = version %}
+  {#- v0.5.x.x up to v0.6.4 Windows display versions have only three parts (e.g. 0.5.2039) #}
+  {#- v0.6.5 and newer have display versions similar to 0.6.5.000 #}
+  {%- if salt["pkg.compare_versions"](version, ">=", "0.5") %}
+    {%- set parts = version.split(".") %}
+    {%- set major, minor, patch = parts[:3] %}
+    {%- set build = parts[3]|d("0") %}
+    {%- if salt["pkg.compare_versions"](version, "<", "0.6.5") %}
+      {%- set display_version = ".".join([major, minor, patch ~ build.zfill(3)]) %}
+    {%- else %}
+      {%- set display_version = ".".join([major, minor, patch, build.zfill(3)]) %}
+    {%- endif %}
   {%- endif %}
 
-  '{{ install_version }}':
-    full_name:  'NSClient++ ({{ arch_name }})'
-    installer: 'https://github.com/mickem/nscp/releases/download/{{ version }}/NSCP-{{ version }}-{{ arch_file }}.msi'
-    uninstaller: 'https://github.com/mickem/nscp/releases/download/{{ version }}/NSCP-{{ version }}-{{ arch_file }}.msi'
-    install_flags: '/quiet'
-    uninstall_flags: '/quiet'
-    msiexec: True
-    locale: en_US
-    reboot: False
+  '{{ display_version|d(version) }}':
+    full_name:  NSClient++ ({{ arch_name|d("x64") }})
+    installer: https://github.com/mickem/nscp/releases/download/{{ version }}/NSCP-{{ version }}-{{ arch_file|d("x64") }}.msi
+    install_flags: /qn /norestart
+    uninstall_flags: /qn /norestart
+    msiexec: true
 {%- endfor %}
