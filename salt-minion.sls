@@ -17,10 +17,18 @@
 # updated to the latest version). New major versions e.g. 3008.0 must be added manually.
 {%- load_yaml as relenv_versions %}
 # renovate: datasource=github-tags depName=salt-3007.x packageName=saltstack/salt
+- '3007.6'
+- '3007.5'
+- '3007.4'
+- '3007.3'
 - '3007.2'
 - '3007.1'
 - 3007.0
 # renovate: datasource=github-tags depName=salt-3006.x packageName=saltstack/salt
+- '3006.14'
+- '3006.13'
+- '3006.12'
+- '3006.11'
 - '3006.10'
 - '3006.9'
 - 3006.8
