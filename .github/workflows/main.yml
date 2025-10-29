@@ -88,7 +88,7 @@ jobs:
               Write-Host ("::error title=salt-call::salt-call returned exit code: $LASTEXITCODE")
               exit 1
           }
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
         if: needs.gsv.outputs.salt-latest == matrix.salt-version
         with:
           if-no-files-found: error
@@ -139,6 +139,9 @@ jobs:
       pull-requests: write
       checks: read
     runs-on: ubuntu-24.04
+    env:
+      # renovate: datasource=npm depName=conventional-changelog-conventionalcommits
+      CC_CONV_COMMITS_VERSION: 9.1.0
     steps:
       - uses: poseidon/wait-for-status-checks@899c768d191b56eef585c18f8558da19e1f3e707 # v0.6.0
         with:
@@ -152,10 +155,10 @@ jobs:
       - id: sem-rel
         uses: codfish/semantic-release-action@6c65402abb31a48c3f7396d7d099da015be67c2b # v4.0.1
         with:
-          additional-packages: conventional-changelog-conventionalcommits@7.0.2
+          additional-packages: conventional-changelog-conventionalcommits@${{ env.CC_CONV_COMMITS_VERSION }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
+      - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
         if: runner.debug || fromJSON(steps.sem-rel.outputs.new-release-published)
       - name: Transform dumped repo data to Renovate-style JSON
         if: runner.debug || fromJSON(steps.sem-rel.outputs.new-release-published)
